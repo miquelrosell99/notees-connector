@@ -56,6 +56,24 @@ describe("captureWithTransport", () => {
     expect(deps.captureViaRest).not.toHaveBeenCalled();
   });
 
+  it("relay feature_disabled is final (no REST fallback)", async () => {
+    const deps = makeDeps();
+    deps.findNoteesTab.mockResolvedValue(tab(5));
+    deps.captureViaRelay.mockResolvedValue({ ok: false, error: { code: "feature_disabled", message: "read-later is off in Notees" } });
+    const out = await createTransport(deps).captureWithTransport(settings(), payload);
+    expect(out).toEqual({ ok: false, error: { code: "feature_disabled", message: "read-later is off in Notees" } });
+    expect(deps.captureViaRest).not.toHaveBeenCalled();
+  });
+
+  it("REST feature_disabled passes through untouched (server's definitive answer)", async () => {
+    const deps = makeDeps();
+    deps.findNoteesTab.mockResolvedValue(null);
+    deps.captureViaRest.mockResolvedValue({ ok: false, error: { code: "feature_disabled", message: "read-later is off in Notees" } });
+    expect(await createTransport(deps).captureWithTransport(settings(), payload))
+      .toEqual({ ok: false, error: { code: "feature_disabled", message: "read-later is off in Notees" } });
+    expect(deps.captureViaRest).toHaveBeenCalledTimes(1);
+  });
+
   it("relay e2ee_required is final (no REST fallback)", async () => {
     const deps = makeDeps();
     deps.findNoteesTab.mockResolvedValue(tab(5));

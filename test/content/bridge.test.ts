@@ -71,11 +71,16 @@ describe("content bridge", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it("installs only once", async () => {
+  it("installs only once even when the guard flag is cleared (second injection, same window)", async () => {
     const addListener = vi.spyOn(fakeBrowser.runtime.onMessage, "addListener");
+    const windowAdd = vi.spyOn(window, "addEventListener");
     await importBridge();
-    const count = addListener.mock.calls.length;
+    // simulate a second executeScript injection into the same page window:
+    // wipe the guard flag and re-evaluate the module — a broken guard would
+    // register a second listener set
+    delete window.__noteesConnectorBridgeInstalled;
     await importBridge();
-    expect(addListener.mock.calls.length).toBe(count);
+    expect(addListener).toHaveBeenCalledTimes(1);
+    expect(windowAdd.mock.calls.filter(([type]) => type === "message")).toHaveLength(1);
   });
 });

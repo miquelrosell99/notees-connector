@@ -6,13 +6,13 @@ import { RELAY_TIMEOUT_MS, captureViaRelay } from "../../src/background/relay";
 const payload = { url: "https://example.com/a", title: "A", mode: "source" as const };
 
 function captureListener() {
-  let listener: ((msg: unknown) => void) | undefined;
+  const listeners: ((msg: unknown) => void)[] = [];
   vi.spyOn(fakeBrowser.runtime.onMessage, "addListener").mockImplementation((fn) => {
-    listener = fn as (msg: unknown) => void;
+    listeners.push(fn as (msg: unknown) => void);
   });
   return (msg: unknown) => {
-    if (!listener) throw new Error("no listener registered");
-    listener(msg);
+    if (listeners.length === 0) throw new Error("no listener registered");
+    for (const listener of listeners) listener(msg);
   };
 }
 
@@ -27,6 +27,45 @@ describe("captureViaRelay", () => {
     const sent = vi.mocked(browser.tabs.sendMessage).mock.calls[0][1] as { requestId: string };
     emit({ source: "notees-connector", type: "relay-from-page", requestId: sent.requestId, ok: true, objectId: "obj-7" });
     expect(await promise).toEqual({ ok: true, transport: "tab-relay", objectId: "obj-7" });
+  });
+
+  it("two in-flight captures: swapped/out-of-order responses each resolve their own request", async () => {
+    const emit = captureListener();
+    vi.spyOn(browser.tabs, "sendMessage").mockResolvedValue(undefined as never);
+    const promiseA = captureViaRelay(3, payload);
+    const promiseB = captureViaRelay(4, payload);
+    const [msgA, msgB] = vi.mocked(browser.tabs.sendMessage).mock.calls.map((c) => c[1]) as { requestId: string }[];
+    // answer B first, with A's response arriving last — each promise must
+    // still resolve with the objectId tied to its own requestId
+    emit({ source: "notees-connector", type: "relay-from-page", requestId: msgB.requestId, ok: true, objectId: "obj-B" });
+    emit({ source: "notees-connector", type: "relay-from-page", requestId: msgA.requestId, ok: true, objectId: "obj-A" });
+    expect(await promiseA).toEqual({ ok: true, transport: "tab-relay", objectId: "obj-A" });
+    expect(await promiseB).toEqual({ ok: true, transport: "tab-relay", objectId: "obj-B" });
+  });
+
+  it("removes its onMessage listener when settled (success and timeout) — no leak", async () => {
+    const emit = captureListener();
+    const addSpy = vi.mocked(fakeBrowser.runtime.onMessage.addListener);
+    const removeSpy = vi.spyOn(fakeBrowser.runtime.onMessage, "removeListener");
+    vi.spyOn(browser.tabs, "sendMessage").mockResolvedValue(undefined as never);
+
+    const okPromise = captureViaRelay(3, payload);
+    const sent = vi.mocked(browser.tabs.sendMessage).mock.calls[0][1] as { requestId: string };
+    emit({ source: "notees-connector", type: "relay-from-page", requestId: sent.requestId, ok: true, objectId: "obj-1" });
+    await okPromise;
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+    expect(removeSpy.mock.calls[0][0]).toBe(addSpy.mock.calls[0][0]);
+
+    vi.useFakeTimers();
+    try {
+      const timeoutPromise = captureViaRelay(3, payload);
+      vi.advanceTimersByTime(RELAY_TIMEOUT_MS + 1);
+      await timeoutPromise;
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(removeSpy).toHaveBeenCalledTimes(2);
+    expect(addSpy).toHaveBeenCalledTimes(2);
   });
 
   it("resolves failure on relay-from-page error (e.g. logged-out tab)", async () => {

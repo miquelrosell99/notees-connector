@@ -58,6 +58,23 @@ describe("options page", () => {
     expect(fakeBrowser.permissions.request).not.toHaveBeenCalled();
   });
 
+  it("populates the form from stored settings on open", async () => {
+    await fakeBrowser.storage.local.set({
+      settings: {
+        serverUrl: "https://stored.example",
+        apiKey: "nk_stored",
+        features: { bibliography: false, readLater: true },
+      },
+    });
+    delete (window as { __noteesOptionsInit?: boolean }).__noteesOptionsInit;
+    const mod = await import("../../src/options/options");
+    await (mod as unknown as { init?: () => Promise<void> }).init?.();
+    expect((document.getElementById("server-url") as HTMLInputElement).value).toBe("https://stored.example");
+    expect((document.getElementById("api-key") as HTMLInputElement).value).toBe("nk_stored");
+    expect((document.getElementById("feat-bibliography") as HTMLInputElement).checked).toBe(false);
+    expect((document.getElementById("feat-readlater") as HTMLInputElement).checked).toBe(true);
+  });
+
   it("test-connection button reports probe failure", async () => {
     (document.getElementById("server-url") as HTMLInputElement).value = "https://host.example";
     (document.getElementById("api-key") as HTMLInputElement).value = "nk_bad";
