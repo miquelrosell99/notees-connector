@@ -23,11 +23,19 @@ describe("extractInPage", () => {
     document.head.innerHTML = `<meta name="dc.identifier" content="https://doi.org/10.5555/abc">`;
     expect(extractInPage()).toEqual({ doi: "10.5555/abc" });
   });
-  it("ignores non-DOI dc.identifier values and collects citation_isbn", () => {
+  it("ignores non-DOI, non-ISBN dc.identifier values and collects citation_isbn", () => {
     document.head.innerHTML = `
-      <meta name="dc.identifier" content="9780123456789">
+      <meta name="dc.identifier" content="pmid:12345678">
       <meta name="citation_isbn" content="9780123456786">`;
     expect(extractInPage()).toEqual({ isbn: "9780123456786" });
+  });
+  it.each([
+    ["urn:isbn:9780123456789", "9780123456789"],
+    ["9780123456789", "9780123456789"],
+    ["0-13-468599-7", "0134685997"],
+  ])("harvests ISBN-typed dc.identifier %s", (raw, expected) => {
+    document.head.innerHTML = `<meta name="dc.identifier" content="${raw}">`;
+    expect(extractInPage()).toEqual({ isbn: expected });
   });
   it("returns {} when no meta tags exist", () => {
     document.head.innerHTML = "";

@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": { "node": ">=20" },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build:scripts": "vite build --mode background && vite build --mode bridge && vite build --mode options",

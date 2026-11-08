@@ -40,6 +40,13 @@ export function extractInPage(): { doi?: string; isbn?: string } {
   }
   const isbn = contentOf(["citation_isbn"]);
   if (isbn) out.isbn = isbn;
+  // dc.identifier can be ISBN-typed ("urn:isbn:…", bare 10/13-digit, hyphenated)
+  else if (!out.doi) {
+    const dcRaw = contentOf(["dc.identifier", "DC.Identifier"]);
+    const compact = dcRaw?.replace(/[- ]/g, "");
+    const m = compact?.match(/^(?:urn:isbn:)?(\d{9}[\dXx]|\d{13})$/i);
+    if (m) out.isbn = m[1];
+  }
   return out;
 }
 

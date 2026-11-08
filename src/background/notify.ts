@@ -1,7 +1,8 @@
 import browser from "webextension-polyfill";
 import { CaptureFailure } from "../shared/capture-types";
 
-const ICON_URL = browser.runtime.getURL("icons/icon.svg");
+// PNG, not SVG: several OS notification servers refuse to render SVG icons.
+const ICON_URL = browser.runtime.getURL("icons/icon-96.png");
 
 export async function notify(title: string, message: string): Promise<void> {
   await browser.notifications.create({ type: "basic", iconUrl: ICON_URL, title, message });
