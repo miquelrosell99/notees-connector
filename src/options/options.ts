@@ -93,7 +93,9 @@ async function init(): Promise<void> {
         ? "Connection OK — the server accepted the API key."
         : result.error === "unauthorized"
           ? "The server rejected the API key (401/403)."
-          : "Could not reach the server — check the URL and network.",
+          : result.error === "not-notees"
+            ? "The server answered, but it is not a Notees sync server."
+            : "Could not reach the server — check the URL and network.",
       result.ok ? "ok" : "err",
     );
   });

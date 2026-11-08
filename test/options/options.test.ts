@@ -67,4 +67,15 @@ describe("options page", () => {
       expect(document.getElementById("status")!.textContent).toContain("rejected the API key");
     });
   });
+
+  it("test-connection button reports a non-Notees server distinctly", async () => {
+    (document.getElementById("server-url") as HTMLInputElement).value = "https://host.example";
+    (document.getElementById("api-key") as HTMLInputElement).value = "nk_ok";
+    vi.mocked(probeServer).mockResolvedValue({ ok: false, error: "not-notees" });
+    document.getElementById("test")!.dispatchEvent(new Event("click"));
+    await vi.waitFor(() => {
+      expect(document.getElementById("status")!.textContent).toContain("not a Notees sync server");
+    });
+    expect(document.getElementById("status")!.className).toBe("err");
+  });
 });
