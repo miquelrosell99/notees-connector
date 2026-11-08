@@ -18,22 +18,29 @@ function titleOf(tab: Tabs.Tab): string {
 }
 
 /**
- * One capture request end to end: DOI/ISBN enrichment (REST path only),
- * transport selection, success/failure notification.
+ * One capture request end to end: DOI/ISBN enrichment (REST path only,
+ * page captures only), transport selection, outcome notification.
+ *
+ * isLinkCapture marks a context-menu capture of a link target: the tab's own
+ * citation meta describes the page, not the link, so extraction must not run.
  */
 export async function performCapture(
   mode: CaptureMode,
   tab: Tabs.Tab,
   settings: ConnectorSettings,
   transport: CaptureTransport,
+  options: { isLinkCapture?: boolean } = {},
 ): Promise<void> {
-  if (!tab.id || !tab.url) return;
+  if (!tab.id || !tab.url) {
+    await notify("Nothing to capture here", "This tab has no page address to capture — try a regular web page.");
+    return;
+  }
   const enabled = mode === "source" ? settings.features.bibliography : settings.features.readLater;
   if (!enabled) {
     await notify("Feature not enabled", "Turn this feature on in the connector settings.");
     return;
   }
-  const identifiers = mode === "source" ? await extractIdentifiers(tab.id) : {};
+  const identifiers = mode === "source" && !options.isLinkCapture ? await extractIdentifiers(tab.id) : {};
   const payload: CapturePayload = {
     url: tab.url,
     title: titleOf(tab),

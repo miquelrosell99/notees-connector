@@ -51,6 +51,20 @@ describe("performCapture (source mode)", () => {
     const payload = captureWithTransport.mock.calls[0][1] as Record<string, unknown>;
     expect("identifiers" in payload).toBe(false);
   });
+  it("link capture skips identifier extraction even when the page has a citation_doi meta", async () => {
+    vi.mocked(extractIdentifiers).mockResolvedValue({ doi: "10.1234/foo" });
+    captureWithTransport.mockResolvedValue({ ok: true, transport: "rest", objectId: "o3" });
+    const linkTab = { id: 9, url: "https://elsewhere.example/paper.pdf", title: "Linked paper" } as Tabs.Tab;
+    await performCapture("source", linkTab, settings, transport, { isLinkCapture: true });
+    expect(extractIdentifiers).not.toHaveBeenCalled();
+    expect(captureWithTransport).toHaveBeenCalledWith(settings, {
+      url: "https://elsewhere.example/paper.pdf",
+      title: "Linked paper",
+      mode: "source",
+    });
+    const payload = captureWithTransport.mock.calls[0][1] as Record<string, unknown>;
+    expect("identifiers" in payload).toBe(false);
+  });
   it("capture failure maps to notifyFailure", async () => {
     const create = vi.spyOn(fakeBrowser.notifications, "create");
     vi.mocked(extractIdentifiers).mockResolvedValue({});
@@ -95,11 +109,14 @@ describe("performCapture (readlater mode)", () => {
       expect.objectContaining({ title: "Feature not enabled" }),
     );
   });
-  it("does nothing when the tab has no id or url", async () => {
+  it("notifies when the tab has no id or url, without capturing", async () => {
     const create = vi.spyOn(fakeBrowser.notifications, "create");
     await performCapture("source", { url: "https://example.com/paper" } as Tabs.Tab, settings, transport);
     await performCapture("source", { id: 9 } as Tabs.Tab, settings, transport);
     expect(captureWithTransport).not.toHaveBeenCalled();
-    expect(create).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Nothing to capture here" }),
+    );
   });
 });

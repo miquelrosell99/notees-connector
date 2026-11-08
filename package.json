@@ -9,6 +9,7 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build:scripts": "vite build --mode background && vite build --mode bridge && vite build --mode options",
     "build:static": "node scripts/copy-static.mjs",
+    "icons": "node scripts/render-icons.mjs",
     "build": "pnpm clean && pnpm build:scripts && pnpm build:static",
     "dev": "pnpm build && vite build --mode background --watch",
     "test": "vitest run",

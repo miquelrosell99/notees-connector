@@ -53,9 +53,11 @@ Gone when Firefox restarts. `pnpm start` builds and launches this in one step
 
 Only on **Firefox Developer Edition**, **Nightly**, or **ESR**: set
 `xpinstall.signatures.required` to `false` in `about:config`, restart, then
-open the XPI file (drag it onto Firefox). Release Firefox will reject it — the
-honest fix is AMO self-distribution signing (`web-ext sign`), which is a
-planned follow-up, not part of this slice.
+open the XPI file (drag it onto Firefox). Note the trade-off: this disables
+signature verification for **all** extensions on that profile, so use it only
+on a profile dedicated to self-hosted/development extensions. Release Firefox
+will reject it — the honest fix is AMO self-distribution signing (`web-ext
+sign`), which is a planned follow-up, not part of this slice.
 
 ## Settings (extension preferences)
 
@@ -89,7 +91,7 @@ A notification confirms every outcome, success or failure.
 pnpm install        # deps (corepack pnpm 9)
 pnpm dev            # build + watch the background bundle
 pnpm start          # build + run in Firefox (web-ext run)
-pnpm test           # vitest suite (102 tests)
+pnpm test           # vitest suite (103 tests)
 pnpm typecheck      # tsc --noEmit
 pnpm build          # vite (3 modes) + static copy → dist/
 pnpm lint:ext       # pnpm build + web-ext lint (0 errors, 0 warnings)
@@ -119,7 +121,10 @@ ship a broken extension.
 
 `icons/icon-48.png` / `icons/icon-96.png` (manifest + toolbar + notification
 icon — PNG because several OS notification servers refuse SVG) are generated
-from `icons/icon.svg`, the design source kept in the repo.
+from `icons/icon.svg`, the design source kept in the repo. Regenerate both
+with `pnpm run icons` (dependency-free: `scripts/render-icons.mjs` encodes
+the PNG on `node:zlib`; the "N" glyph is drawn from geometry measured off the
+shipped icon, since dependency-free SVG text rendering has no font engine).
 
 ## Planned follow-ups (not in this slice)
 

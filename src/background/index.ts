@@ -54,9 +54,11 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
     : info.menuItemId === MENU_READLATER_ID ? "readlater"
     : null;
   if (!mode) return;
-  // "link" context: capture the link target instead of the page
-  const target = info.linkUrl ? { ...tab, url: info.linkUrl, title: info.linkText ?? tab.title } : tab;
-  fire(currentSettings().then((s) => performCapture(mode, target, s, transport)));
+  // "link" context: capture the link target instead of the page — and flag it,
+  // so the page's own citation meta is never attached to the link's URL.
+  const isLink = Boolean(info.linkUrl);
+  const target = isLink ? { ...tab, url: info.linkUrl, title: info.linkText ?? tab.title } : tab;
+  fire(currentSettings().then((s) => performCapture(mode, target, s, transport, { isLinkCapture: isLink })));
 });
 
 // Options page nudge (storage.onChanged covers persistence; this wakes a sleeping background).
