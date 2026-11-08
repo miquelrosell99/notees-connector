@@ -39,8 +39,9 @@ export function createTransport(deps: TransportDeps) {
         await deps.ensureBridge(tab.id);
         const outcome = await deps.captureViaRelay(tab.id, payload);
         if (outcome.ok) return outcome;
-        // not_authenticated / feature_disabled / e2ee_required are definitive
-        // page answers — FINAL, no REST fallback after one of those.
+        // not_authenticated / feature_disabled are definitive page answers —
+        // FINAL, no REST fallback after one of those. (e2ee_required is
+        // REST-only by construction: PageCaptureError's union can't carry it.)
         // Only a generic "failed" (timeout, tab unreachable) falls through to REST.
         if (outcome.error.code !== "failed") return outcome;
       } catch {

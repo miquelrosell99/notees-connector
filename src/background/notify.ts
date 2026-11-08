@@ -24,7 +24,7 @@ const COPY: Record<CaptureFailure["code"], [string, string]> = {
     "Notees server unreachable",
     "Check the server URL and your network connection in the connector settings.",
   ],
-  http_error: ["Notees capture failed", "The server returned an unexpected error."],
+  http_error: ["Notees server error", "The server returned an unexpected error."],
   failed: ["Notees capture failed", "Something went wrong while capturing this page."],
 };
 
