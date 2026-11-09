@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@9.0.0 --activate
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        # The manifest/build-output contract tests read dist/ — build ran above.
+        run: pnpm test
+      - name: web-ext lint
+        run: pnpm lint:ext
