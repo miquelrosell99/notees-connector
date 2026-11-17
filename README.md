@@ -1,3 +1,5 @@
+> **Archived (2026-11-17).** This repository has merged into the Notees monorepo — [`miquelrosell99/notees`](https://github.com/miquelrosell99/notees), under `clients/connector/` with the full git history (ADR-002, the monorepo reunification). Releases stay available here; new releases, issues, and PRs live in the monorepo, and the per-component pipeline moved with it (tags are now `connector-v*`-prefixed there — the release history here predates the move). See `clients/connector/` in the monorepo for the live tree.
+
 # Notees Connector
 
 A Firefox extension that captures web pages into your self-hosted
